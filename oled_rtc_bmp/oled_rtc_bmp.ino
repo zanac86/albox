@@ -1,5 +1,4 @@
 #include <OLED_I2C.h>
-#include <Ticker.h>
 
 #include "display.h"
 #include "buttons.h"
@@ -7,15 +6,13 @@
 
 void updateDisplay();
 
-Ticker tickerDisplay(requestUpdateScreen, 1000);
-Ticker tickerChangeDisplayType(change_display_type, 20000);
-
 OLED  oled(SDA, SCL); // Remember to add the RESET pin if your display requires it...
 
 BUTTONS buttons(8); // one button connected
 BUZZER buzzer(9); // pin 9 to beeper
 
-volatile bool need_update = true;
+uint32_t timeUpdate = 0;
+uint32_t timeChange = 0;
 
 #include "datasource.h"
 
@@ -27,42 +24,33 @@ void setup()
   ds.begin();
   buzzer.begin();
   buttons.begin();
-
-  tickerDisplay.start();
-  tickerChangeDisplayType.start();
 }
 
 void loop()
 {
-  tickerDisplay.update();
-  tickerChangeDisplayType.update();
-  updateDisplay();
+  if ((millis() - timeUpdate) > 1000)
+  {
+    timeUpdate = millis();
+    ds.update();
+    screen_update(&oled, &ds);
+    oled.update();
+  }
+
+  if ((millis() - timeChange) > 10000)
+  {
+    timeChange = millis();
+    change_display_type();
+  }
+
   buttons.update();
   bool pressed = buttons.wasTriggered();
   if (pressed)
   {
     buzzer.click();
     change_screen_mode();
-    //    change_display_type();
-    need_update = true;
+    timeUpdate =0;
   }
+
   if (Serial.available() > 0)
     serialMode();
-
-}
-
-void requestUpdateScreen()
-{
-  need_update = true;
-}
-
-void updateDisplay()
-{
-  if (need_update)
-  {
-    ds.update();
-    screen_update(&oled, &ds);
-    oled.update();
-    need_update = false;
-  }
 }
