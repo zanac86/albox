@@ -76,13 +76,22 @@ void DataSource::update_pressure_history()
         pressure_history[i] = pressure_history[i + 1];
     }
     pressure_history[HISTORY_LEN - 1] = (uint16_t)(pressure_mmHg);
+
+    // тест
+    // const uint16_t u[] = {742, 740, 747, 750, 752, 753, 755, 757, 763, 762, 759, 757, 753, 750, 748, 770 };
+    // const uint16_t u[] = {750, 751, 751, 751, 750, 750, 750, 750, 749, 750, 750, 750, 750, 750, 751, 761 };
+    // for (uint8_t i = 0; i < HISTORY_LEN; i++)
+    // {
+    //     pressure_history[i] = u[i];
+    // }
 }
 
 void DataSource::strDateTime(char* s)
 {
-    sprintf(s, "%02u/%02u/%04u %02u:%02u:%02u", t.day(), t.month(), t.year(), t.hour(), t.minute(), t.second());
+    sprintf(s, "%02u/%02u/%04u  %02u:%02u:%02u", t.day(), t.month(), t.year(), t.hour(), t.minute(), t.second());
 }
 
+// день недели строкой 3 символа или полное название
 void DataSource::strDayOfWeek(char* s, bool isLongName)
 {
     if (isLongName)
@@ -95,6 +104,7 @@ void DataSource::strDayOfWeek(char* s, bool isLongName)
     }
 }
 
+// месяц строкой 3 символа или полное название
 void DataSource::strMonth(char* s, bool isLongName)
 {
     if (isLongName)
@@ -112,6 +122,11 @@ void DataSource::strDateLong(char* s)
     sprintf(s, "%02u/%02u/%04u %3s", t.day(), t.month(), t.year(), daysShort[t.dayOfTheWeek() - 1]);
 }
 
+void DataSource::strDateWithMonthName(char* s)
+{
+    sprintf(s, "%02u %s %04u", t.day(), monthLong[t.month()], t.year());
+}
+
 void DataSource::strDate(char* s)
 {
     sprintf(s, "%02u-%02u-%04u", t.day(), t.month(), t.year());
@@ -127,6 +142,7 @@ void DataSource::strTimeHMS(char* s)
     sprintf(s, "%02u:%02u:%02u", t.hour(), t.minute(), t.second());
 }
 
+// давление в hpa c 1 или 2 знаками после точки
 void DataSource::strPressure(char* s, uint8_t format)
 {
     char ss[10];
@@ -136,8 +152,12 @@ void DataSource::strPressure(char* s, uint8_t format)
             dtostrf(pressure_mmHg, 0, 0, ss);
             sprintf(s, "%s", ss);
             break;
-        case PRESSURE_FORMAT_MMHG:
+        case PRESSURE_FORMAT_MMHG2:
             dtostrf(pressure_mmHg, 0, 2, ss);
+            sprintf(s, "%s", ss);
+            break;
+        case PRESSURE_FORMAT_MMHG1:
+            dtostrf(pressure_mmHg, 0, 1, ss);
             sprintf(s, "%s", ss);
             break;
         case PRESSURE_FORMAT_HPA_INT:
@@ -151,6 +171,10 @@ void DataSource::strPressure(char* s, uint8_t format)
         case PRESSURE_FORMAT_HPA1:
             dtostrf(pressure_hPa, 0, 1, ss);
             sprintf(s, "%s", ss);
+            break;
+        case PRESSURE_FORMAT_MMHG_UNITS:
+            dtostrf(pressure_mmHg, 0, 1, ss);
+            sprintf(s, "%s mmHg", ss);
             break;
         default:
             sprintf(s, "xxxxxx");
@@ -171,6 +195,7 @@ void DataSource::normalize_history(uint8_t max_h_norm)
 {
     uint16_t mn = pressure_history[HISTORY_LEN - 1];
     uint16_t mx = pressure_history[HISTORY_LEN - 1];
+    // find min/max == range
     for (uint8_t i = 0; i < HISTORY_LEN; i++)
     {
         norm_history[i] = 0;
@@ -190,11 +215,12 @@ void DataSource::normalize_history(uint8_t max_h_norm)
         }
     }
 
-    if (((mn == 0) || (mx == 0)) || (mn > mx))
+    if (((mn == 0) || (mx == 0)))
     {
-        //
+        // все нули и рисовать нечего
         return;
     }
+
     if (mn == mx)
     {
         // если менялось мало и в целых значениях изменения нет
@@ -208,18 +234,31 @@ void DataSource::normalize_history(uint8_t max_h_norm)
         }
         return;
     }
+
+    // диапазон изменения истории
+    uint16_t range = mx - mn;
+
+    if (range <= 2)
+    {
+        mn = mn - 2;
+        mx = mx + 2;
+        range = mx - mn;
+    }
+
     for (uint8_t i = 0; i < HISTORY_LEN; i++)
     {
         if (pressure_history[i] == 0)
         {
             continue;
         }
-        uint16_t range = mx - mn;
         uint32_t tmp = (uint32_t)(pressure_history[i] - mn);
         tmp = (tmp * max_h_norm) << 10;
         tmp = (tmp / (range + 1));
         tmp = (tmp >> 10);
+        if (tmp == 0)
+        {
+            tmp = 1;
+        }
         norm_history[i] = (uint8_t) tmp;
-
     }
 }
