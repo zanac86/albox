@@ -75,7 +75,7 @@ void DataSource::update_pressure_history()
     {
         pressure_history[i] = pressure_history[i + 1];
     }
-    pressure_history[HISTORY_LEN - 1] = (uint16_t)(pressure_mmHg);
+    pressure_history[HISTORY_LEN - 1] = (uint16_t)(pressure_mmHg * 10.0);
 
     // тест
     // const uint16_t u[] = {742, 740, 747, 750, 752, 753, 755, 757, 763, 762, 759, 757, 753, 750, 748, 770 };
@@ -238,10 +238,11 @@ void DataSource::normalize_history(uint8_t max_h_norm)
     // диапазон изменения истории
     uint16_t range = mx - mn;
 
-    if (range <= 2)
+    // +- 2 это в 20, так как в истории лежат  в мм.рт.ст*10
+    if (range <= 20)
     {
-        mn = mn - 2;
-        mx = mx + 2;
+        mn = mn - 20;
+        mx = mx + 20;
         range = mx - mn;
     }
 
@@ -261,4 +262,12 @@ void DataSource::normalize_history(uint8_t max_h_norm)
         }
         norm_history[i] = (uint8_t) tmp;
     }
+}
+
+void DataSource::strPressureHistory(char* s, uint8_t index)
+{
+    char ss[10];
+    double p = (double)(pressure_history[index]) / 10.0;
+    dtostrf(p, 0, 1, ss);
+    sprintf(s, "%s", ss);
 }

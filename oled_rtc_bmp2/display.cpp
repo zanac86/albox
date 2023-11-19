@@ -4,7 +4,7 @@ extern uint8_t MsxFont[];
 extern uint8_t BigNumbers[];
 extern uint8_t MediumNumbers[];
 
-const uint8_t max_count_display_type = 4;
+const uint8_t max_count_display_type = 5;
 volatile uint8_t display_type = 0;
 
 void change_display_type()
@@ -27,6 +27,9 @@ void screen_update(OLED* o, DataSource* ds)
             break;
         case 3:
             screen3(o, ds);
+            break;
+        case 4:
+            screen4(o, ds);
             break;
     }
 }
@@ -152,5 +155,36 @@ void show_message(OLED* o, char* s)
     o->clrScr();
     o->setFont(MsxFont);
     o->print(s, CENTER, 10);
+    o->update();
+}
+
+void screen4(OLED* o, DataSource* ds)
+{
+    char s[20];
+    o->clrScr();
+    o->setFont(MsxFont);
+    const uint8_t n_lines = 8;
+    const uint8_t col_width = 36;
+    const uint8_t row_height = 8;
+    for (uint8_t i = 0; i < HISTORY_LEN; i++)
+    {
+        uint8_t x = (i / n_lines) * col_width;
+        uint8_t y = (i % n_lines) * row_height;
+        ds->strPressureHistory(s, i);
+        o->print(s, x, y);
+    }
+
+    ds->strTimeHMS(s);
+    o->print(s, 80, 56);
+
+    ds->strTemperature(s);
+    o->print(s, RIGHT, 40);
+
+    o->setFont(BigNumbers);
+    ds->strPressure(s, PRESSURE_FORMAT_MMHG_INT);
+    o->print(s, 86, 8);
+
+
+
     o->update();
 }

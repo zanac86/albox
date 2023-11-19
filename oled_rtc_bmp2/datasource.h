@@ -36,6 +36,8 @@ class DataSource
         void strPressure(char* s, uint8_t format);
         void strTemperature(char* s);
 
+        void strPressureHistory(char* s, uint8_t index);
+
         //
         void normalize_history(uint8_t max_h_norm);
 
@@ -51,7 +53,7 @@ class DataSource
         double pressure_hPa;
         double temperature;
 
-        // история давления в целых мм рт.ст.
+        // история давления в  мм.рт.ст. * 10 == 7521 - 752.1 мм
         uint16_t pressure_history[HISTORY_LEN];
 
 

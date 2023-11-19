@@ -10,5 +10,6 @@ void screen0(OLED* o, DataSource* ds);
 void screen1(OLED* o, DataSource* ds);
 void screen2(OLED* o, DataSource* ds);
 void screen3(OLED* o, DataSource* ds);
+void screen4(OLED* o, DataSource* ds);
 
 void show_message(OLED* o, char* s);

@@ -23,7 +23,7 @@ void setupTimeFromSerial()
     // Wait $2211301830453$
     //       YYMMDDHHMMSSbrightness 1..7
     Serial.println("CMD waiting...");
-    show_message(&oled, "Seting RTC...");
+    show_message(&oled, "Setup RTC...");
     bool cmdReady = false;
     unsigned long timeToBreak = millis() + 10000;
     char str[20];
@@ -99,19 +99,23 @@ void setup()
 
 void loop()
 {
+    // EVERY_N_SECONDS(3) // для отладки истории
     EVERY_N_MINUTES(15)
     {
+        // обновить историю давления
         ds.update(UPDATE_PRESSURE_HISTORY);
     }
 
     EVERY_N_SECONDS(1)
     {
+        // обновить часы и текущее давление
         ds.update(UPDATE_PRESSURE | UPDATE_RTC);
         screen_update(&oled, &ds);
     }
 
     EVERY_N_SECONDS(30)
     {
+        // переключить экран
         change_display_type();
     }
 
@@ -119,6 +123,7 @@ void loop()
     bool pressed = buttons.wasTriggered();
     if (pressed)
     {
+        // по кнопке переключить экран
         buzzer.click();
         change_display_type();
         screen_update(&oled, &ds);
@@ -128,6 +133,7 @@ void loop()
 
     if (Serial.available())
     {
+        // есть данные в uart - может новое время от компа
         setupTimeFromSerial();
         buzzer.accord();
     }
